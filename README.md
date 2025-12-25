@@ -1,61 +1,241 @@
-###📄 Document Controller
+# 📄 Document Controller  
+**AI-Powered Document Processing & Tracking Workflow (n8n)**
 
-AI-Powered Document Processing & Tracking Workflow (n8n)
+The **Document Controller** is an automation workflow built with **n8n** that processes documents received via **Telegram**, analyzes them using **AI**, stores structured data in **Google Sheets**, uploads files to **Google Drive**, and manages document workflows using intelligent logic and scheduling.
 
-The Document Controller is an advanced automation workflow built with n8n that processes documents sent via Telegram, analyzes them using AI, stores structured data in Google Sheets, uploads files to Google Drive, and manages follow-up logic through intelligent routing and scheduling.
+This workflow is ideal for:
+- Document intake and classification  
+- AI-powered document analysis  
+- Automated record keeping  
+- File storage and tracking  
+- Workflow-safe processing with fallbacks  
 
-This workflow acts as a document ingestion and analysis pipeline, ideal for:
-
-- Internal document processing
-- Knowledge ingestion
-- AI-powered document classification
-- Automated record keeping
-- Scheduled reviews and follow-ups
 ---
 
-##🌐 Overview
+## 🌐 Overview
 
-This workflow listens for incoming documents via Telegram, analyzes their content using an AI model, extracts meaningful data, and stores results in Google Sheets while optionally uploading files to Google Drive.
+The Document Controller acts as a **document ingestion and control layer** between external sources (Telegram uploads) and internal storage systems.
 
-It supports:
+It automatically:
+- Receives documents
+- Analyzes content using AI
+- Stores results in Google Sheets
+- Uploads files to Google Drive
+- Handles missing or invalid data safely
+- Routes documents based on content
+- Supports scheduled processing
 
-- File-based ingestion (PDFs, images, documents)
-- AI-powered text and image analysis
-- Conditional logic based on document content
-- Persistent storage and tracking
-- Automated notifications
-- Scheduled processing and cleanup
 ---
 
-##✨ Key Features
+## ✨ Key Features
 
-📥 Telegram File Intake
-Accepts documents and images sent via Telegram
+- 📥 **Telegram File Intake**
+  - Accepts documents, images, and text
+  - Trigger-based execution
 
-  🧠 AI-Powered Analysis
+- 🧠 **AI-Powered Analysis**
+  - Text and image understanding
+  - Document summarization
+  - Intelligent classification
 
-Text understanding (Claude / LLM)
+- 🗃️ **Google Sheets Logging**
+  - Stores structured document data
+  - Tracks status and metadata
 
-Image understanding
+- 📁 **Google Drive Upload**
+  - Saves files automatically
+  - Generates shareable links
 
-Content classification
+- 🔀 **Conditional Logic**
+  - Handles empty or invalid inputs
+  - Routes documents intelligently
 
-🗃️ Google Sheets Integration
+- ⏱️ **Scheduled Processing**
+  - Supports cleanup and batch review
 
-Stores extracted metadata
+- 🛡️ **Fail-Safe Execution**
+  - No crashes on missing data
+  - Safe fallback logic in JavaScript
 
-Tracks document status
+---
 
-Supports updates and lookups
+## 🧱 Architecture Overview
 
-📁 Google Drive Upload
+Telegram Trigger
+↓
+Download File
+↓
+AI Document Analysis
+↓
+Conditional Logic
+↓
+Store Metadata (Google Sheets)
+↓
+Upload File (Google Drive)
+↓
+Send Telegram Response
+↓
+Scheduled Review / Cleanup
 
-Automatically uploads files
 
-Shares files when required
+---
 
-🔀 Conditional Routing
+## 🧩 Workflow Breakdown
 
-Different logic paths based on content
+### 1️⃣ Telegram Trigger
+- Listens for incoming files or messages
+- Supports:
+  - Documents
+  - Images
+  - Text input
 
-Handles empty or invalid files safely
+---
+
+### 2️⃣ File Processing
+- Downloads file from Telegram
+- Extracts:
+  - File name
+  - File type
+  - Content
+
+---
+
+### 3️⃣ AI Analysis
+Uses an LLM to:
+- Extract key information
+- Summarize content
+- Interpret images
+- Classify documents
+
+---
+
+### 4️⃣ Conditional Routing
+Logic decides:
+- Whether to store the document
+- Which path to follow
+- Whether to notify or skip
+
+---
+
+### 5️⃣ Data Storage
+Stored in **Google Sheets**:
+- File name
+- Analysis output
+- Status
+- Timestamp
+- Source
+
+---
+
+### 6️⃣ File Upload
+- Uploads to Google Drive
+- Stores Drive URL
+- Optional sharing enabled
+
+---
+
+### 7️⃣ Notifications
+- Sends confirmation via Telegram
+- Alerts on failures or success
+
+---
+
+### 8️⃣ Scheduled Processing
+- Periodic review of stored documents
+- Cleanup or reprocessing logic
+
+---
+
+## 🧠 Technology Stack
+
+| Component | Purpose |
+|----------|---------|
+| **n8n** | Workflow automation |
+| **Telegram Bot API** | File ingestion |
+| **AI Model (Claude/OpenAI)** | Document analysis |
+| **Google Sheets** | Metadata storage |
+| **Google Drive** | File storage |
+| **JavaScript Nodes** | Logic handling |
+| **Cron Trigger** | Scheduled execution |
+
+---
+
+## 🗂️ Data Model
+
+### Document Record
+| Field | Description |
+|------|-------------|
+| `fileName` | Name of uploaded file |
+| `fileType` | MIME type |
+| `analysis` | AI-generated summary |
+| `status` | processed / pending |
+| `driveLink` | Google Drive URL |
+| `createdAt` | Timestamp |
+| `source` | Telegram |
+
+---
+
+## ⚙️ Setup Instructions
+
+### 1️⃣ Import Workflow
+n8n → Import → document controller.json
+
+
+---
+
+### 2️⃣ Configure Credentials
+Add credentials for:
+- Telegram Bot
+- Google Drive
+- Google Sheets
+- AI Provider (Claude / OpenAI)
+
+---
+
+### 3️⃣ Prepare Google Sheet
+Recommended columns:
+- fileName  
+- fileType  
+- analysis  
+- driveLink  
+- status  
+- timestamp  
+
+---
+
+### 4️⃣ Configure Telegram Bot
+- Create bot via BotFather
+- Add token to n8n
+- Enable file access
+
+---
+
+### 5️⃣ Test the Workflow
+Send a document to your Telegram bot and verify:
+- AI analysis runs
+- Sheet is updated
+- File uploads to Drive
+- Confirmation message is sent
+
+---
+
+## 📊 Example Output
+
+```json
+{
+  "fileName": "contract.pdf",
+  "analysis": "This document contains a service agreement...",
+  "status": "processed",
+  "driveLink": "https://drive.google.com/...",
+  "source": "telegram"
+}
+
+---
+⚠️ Common Issues & Fixes
+| Issue              | Cause                | Solution            |
+| ------------------ | -------------------- | ------------------- |
+| File not processed | Bot permission issue | Reconnect Telegram  |
+| AI fails           | Token expired        | Reauthorize API     |
+| Sheet not updated  | Wrong Sheet ID       | Verify credentials  |
+| Duplicate entries  | Missing validation   | Enable record check |
+| Workflow stops     | Empty input          | Use fallback logic  |
