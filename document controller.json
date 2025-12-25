@@ -1,0 +1,6295 @@
+{
+  "name": "Yuly 360",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const telegramData = $(\"Telegram Trigger1\").all();\nconst documentExtensions = [\".pdf\", \".doc\", \".docx\", \".xlsx\"];\nconst imageExtensions = [\".jpg\", \".jpeg\", \".webp\"];\n\nconst result = telegramData.map((item) => {\n  const msg = item.json.message || {};\n\n  let extension = null;\n\n  if (msg.document?.file_name) {\n    // Document → extract extension from filename\n    extension = \".\" + msg.document.file_name.split(\".\").pop().toLowerCase();\n  } else if (msg.photo) {\n    // Photo → default extension\n    extension = \".jpg\";\n  }\n\n  const classification =\n    (documentExtensions.includes(extension) || imageExtensions.includes(extension))\n      ? \"file\"\n      : \"other\";\n\n  return { json: { extension, classification } };\n});\n\nreturn result;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -11392,
+        592
+      ],
+      "id": "118f8729-f0ac-47a3-86fd-c6c6b9385683",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('Telegram Trigger1').item.json.message.document.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -9920,
+        -112
+      ],
+      "id": "b970f697-df81-486b-aaf4-7416064751a9",
+      "name": "Get a file",
+      "webhookId": "41fe50d0-271b-4b24-8bb1-4b601a2ba5f8",
+      "credentials": {
+        "telegramApi": {
+          "id": "dP8xscPNakvzLMy9",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('Telegram Trigger1').item.json.message.photo[0].file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -10096,
+        1504
+      ],
+      "id": "f6e452dd-6680-47fe-921d-067c9b7d4638",
+      "name": "Get a file1",
+      "webhookId": "41fe50d0-271b-4b24-8bb1-4b601a2ba5f8",
+      "credentials": {
+        "telegramApi": {
+          "id": "dP8xscPNakvzLMy9",
+          "name": "Telegram account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "resource": "document",
+        "modelId": {
+          "__rl": true,
+          "value": "claude-opus-4-5-20251101",
+          "mode": "list",
+          "cachedResultName": "claude-opus-4-5-20251101"
+        },
+        "text": "=You are a document classification system. The user has uploaded a document image or file.\nYour task:\n1. Identify what type of document it is from the list below.\n2. Provide a confidence score between 0 and 1.\n3. If the document does not match any category, mark it as \"Unknown\".\n\nDocument Categories:\n- ID (Driver’s License or Passport)\n- Social Security Document\n- W-2 Form\n- 1099 Form\n- Bank Statement\n- Business Income/Expense Summary\n- Last Year’s Tax Return\n- Receipt (any type)\n- Unknown\n\nFor the document I provide, respond ONLY in the following JSON format:\n\n{\n  \"documentType\": \"<one of the categories>\",\n  \"reason\": \"<why you classified it this way>\",\n  \"confidence\": <float between 0 and 1>\n}\n\nCRITICAL INSTRUCTION:\n- The \"documentType\" field MUST use the EXACT category name from the Document Categories list above\n- For passports or driver's licenses, you MUST use exactly: \"ID (Driver's License or Passport)\"\n- Do NOT use variations like \"ID\", \"Passport\", \"Driver's License\", or any other format\n- Match the category name character-for-character, including parentheses and capitalization",
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        -9648,
+        -112
+      ],
+      "id": "fd50991c-ad79-4646-b587-75333175090f",
+      "name": "Analyze document",
+      "credentials": {
+        "anthropicApi": {
+          "id": "y5bLLtFmqWAMq8zx",
+          "name": "Anthropic account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "modelId": {
+          "__rl": true,
+          "value": "claude-opus-4-5-20251101",
+          "mode": "list",
+          "cachedResultName": "claude-opus-4-5-20251101"
+        },
+        "text": "=You are a document classification system. The user has uploaded a document image or file.\nYour task:\n1. Identify what type of document it is from the list below.\n2. Provide a confidence score between 0 and 1.\n3. If the document does not match any category, mark it as \"Unknown\".\n\nDocument Categories:\n- ID (Driver's License or Passport)\n- Social Security Document\n- W-2 Form\n- 1099 Form\n- Bank Statement\n- Business Income/Expense Summary\n- Last Year's Tax Return\n- Receipt (any type)\n- Unknown\n\nFor the image I provide, respond ONLY in the following JSON format:\n\n{\n  \"documentType\": \"<one of the categories>\",\n  \"reason\": \"<why you classified it this way>\",\n  \"confidence\": <float between 0 and 1>\n}\n\nCRITICAL INSTRUCTION:\n- The \"documentType\" field MUST use the EXACT category name from the Document Categories list above\n- For passports or driver's licenses, you MUST use exactly: \"ID (Driver's License or Passport)\"\n- Do NOT use variations like \"ID\", \"Passport\", \"Driver's License\", or any other format\n- Match the category name character-for-character, including parentheses and capitalization\n\nUse strict JSON with no extra text outside the JSON.\nThe base64 file content is below. Analyze it carefully.",
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        -9872,
+        1488
+      ],
+      "id": "01baffdd-5f41-457b-bc9c-037dfd739b78",
+      "name": "Analyze image",
+      "credentials": {
+        "anthropicApi": {
+          "id": "y5bLLtFmqWAMq8zx",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\n// List of valid U.S. tax-related document types\nconst validDocuments = [\n  \"ID (Driver's License or Passport)\",\n  \"Social Security Document\",\n  \"W-2 Form\",\n  \"1099 Form\",\n  \"Bank Statement\",\n  \"Business Income/Expense Summary\",\n  \"Last Year's Tax Return\",\n  \"Receipt (any type)\"\n];\n\nconst documentData = items.map((item) => {\n  const rawText =\n    item?.json?.content?.[0]?.text ||\n    item?.json?.response ||\n    item?.json?.text ||\n    \"\";\n\n  const cleaned = rawText\n    .replace(/```json/gi, \"\")\n    .replace(/```/g, \"\")\n    .trim();\n\n  let parsed;\n  try {\n    parsed = JSON.parse(cleaned);\n  } catch (err) {\n    console.error(\"Failed to parse JSON:\", err);\n    return {\n      documentType: \"Unknown\",\n      reason: \"unknown\",\n      confidence: 0\n    };\n  }\n\n  let { documentType, reason, confidence } = parsed;\n\n  // If the detected type is not in the valid list, override to unknown\n  if (!validDocuments.includes(documentType)) {\n    documentType = \"Unknown\";\n    reason = \"unknown\";\n  }\n\n  return {\n    documentType: documentType ?? \"Unknown\",\n    reason: reason ?? \"unknown\",\n    confidence: confidence ?? 0\n  };\n});\n\nreturn { json: { documentData } };\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -9616,
+        1488
+      ],
+      "id": "b7daf177-5e0e-49ab-8361-92422ce36dd9",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "2093ba57-2688-4c8d-b0cb-dcb42bf43c54",
+              "leftValue": "={{ $json.documentData[0].documentType }}",
+              "rightValue": "Unknown",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -9376,
+        1488
+      ],
+      "id": "9602932d-f4fc-4dec-b92b-1d2d0d3be492",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger1').item.json.message.chat.id }}",
+        "text": "=Please take a moment to confirm that the attached file meets the requirements and is in PDF format, if possible.",
+        "additionalFields": {
+          "disable_notification": true
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -8976,
+        1088
+      ],
+      "id": "98d067d5-1a3d-4dfe-8bb9-fe339ea53c31",
+      "name": "Send a text message",
+      "webhookId": "264dbcb0-9c8c-418a-92bf-279f94a5bb7a",
+      "notesInFlow": false,
+      "credentials": {
+        "telegramApi": {
+          "id": "dP8xscPNakvzLMy9",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "02e60952-004d-44cc-add7-6b8d8745f3a9",
+              "leftValue": "={{ $json.classification }}",
+              "rightValue": "other",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -11184,
+        592
+      ],
+      "id": "ba224a52-e436-47fa-8db7-0e6016f4281e",
+      "name": "If1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -11184,
+        1008
+      ],
+      "id": "e2ad1555-abaa-43f0-9987-86f50becd56a",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\n// List of valid U.S. tax-related document types\nconst validDocuments = [\n  \"ID (Driver's License or Passport)\",\n  \"Social Security Document\",\n  \"W-2 Form\",\n  \"1099 Form\",\n  \"Bank Statement\",\n  \"Business Income/Expense Summary\",\n  \"Last Year's Tax Return\",\n  \"Receipt\"\n];\n\nconst documentData = items.map((item) => {\n  const rawText =\n    item?.json?.content?.[0]?.text ||\n    item?.json?.response ||\n    item?.json?.text ||\n    \"\";\n\n  const cleaned = rawText\n    .replace(/```json/gi, \"\")\n    .replace(/```/g, \"\")\n    .trim();\n\n  let parsed;\n  try {\n    parsed = JSON.parse(cleaned);\n  } catch (err) {\n    console.error(\"Failed to parse JSON:\", err);\n    return {\n      documentType: \"Unknown\",\n      reason: \"unknown\",\n      confidence: 0\n    };\n  }\n\n  let { documentType, reason, confidence } = parsed;\n\n  // If the detected type is not in the valid list, override to unknown\n  if (!validDocuments.includes(documentType)) {\n    documentType = \"Unknown\";\n    reason = \"unknown\";\n  }\n\n  return {\n    documentType: documentType ?? \"Unknown\",\n    reason: reason ?? \"unknown\",\n    confidence: confidence ?? 0\n  };\n});\n\nreturn { json: { documentData } };\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -9296,
+        -128
+      ],
+      "id": "073b9f21-a1a0-48c1-be67-c9bce16d81c4",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {
+          "download": true
+        }
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -12896,
+        592
+      ],
+      "id": "ea33e4ea-2a14-429f-a41c-2a3515bcc17b",
+      "name": "Telegram Trigger1",
+      "webhookId": "6e70806f-92ab-4f52-8242-58cc682cebcf",
+      "credentials": {
+        "telegramApi": {
+          "id": "dP8xscPNakvzLMy9",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Call the SheetChecker tool to check the user's document status for Telegram ID: {{ $json.message.from.id }}. After receiving the tool results, analyze the data and return ONLY the JSON response as specified in your instructions.",
+        "options": {
+          "systemMessage": "=You are a Document Verification Assistant. Your job is to check a user's row inside a Google Sheet and determine which required documents are missing.\n\nYou will always follow the rules below:\n\n1. INPUT YOU WILL RECEIVE\n\nYou will receive a message from a chat.\n\n2. YOUR LOGIC\n\nStep 1 — Call the SheetChecker tool to search for the row with the Telegram ID provided in the user message.\n\nThe columns in the sheet are: [\"Telegram ID\", \"Name\", \"ID\", \"Social Security number\", \"W-2s from employers\", \"1099s\", \"Business income/expense summary\", \"Bank statements\", \"Last year's tax return\", \"Receipts for deductions\"]\n\nOnly reference columns from this list. Never invent or guess column names.\n\nStep 2 — Detect if the user is new\n\nIf the cell under \"Telegram ID\" is empty, output:\n\n{\n  \"status\": \"new_user\",\n  \"message\": \"Telegram ID is empty. This is a new user.\",\n  \"missing_fields\": []\n}\n\nDo NOT continue checking anything else.\n\nStep 3 — Existing user\n\nIf \"Telegram ID\" is NOT empty, examine the row and:\n\nIdentify which columns have an empty value (\"\" or null)\n\nCollect the titles of those columns\n\nThen output:\n\n{\n  \"status\": \"existing_user\",\n  \"missing_fields\": [\"Column A\", \"Column B\", ...]\n}\n\nStep 4 — Completed user\n\nIf \"Telegram ID\" is NOT empty and no fields are missing:\n\n{\n  \"status\": \"completed_user\",\n  \"missing_fields\": \"none\"\n}\n\n3. OUTPUT RULES\n\nAlways output clean JSON\n\nDo NOT add explanations\n\nDo NOT add commentary\n\nOnly return the JSON object\n\nMissing fields MUST always reference column titles exactly as they appear\n\n4. SPECIAL RULES\n\nTreat cells with spaces as empty (e.g., \" \" = empty)\n\nIgnore columns that are never meant to be checked (optional: you can specify a list if needed)\n\nNever change the column names\n\nNever guess missing data—only check the row provided\n\n5. YOUR FINAL RESPONSIBILITY\n\nYour ONLY job is to:\n\nDetect if the user is new\n\nIf not new, list missing document fields accurately\n\nReturn valid JSON exactly as specified"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        -12672,
+        592
+      ],
+      "id": "0e132440-d870-4fd2-8356-2ab2155f5a43",
+      "name": "RAG Agent1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst formattedItems = items.map((item) => {\n  try {\n    const aiResponse = item.json.output;\n    const codeBlockMatch = aiResponse.match(/```json([\\s\\S]*?)```/);\n    let jsonString = aiResponse;\n\n    if (codeBlockMatch) {\n      jsonString = codeBlockMatch[1].trim();\n    }\n\n    const parsed = JSON.parse(jsonString);\n    const missingString = Array.isArray(parsed.missing_fields)\n      ? parsed.missing_fields.join(\", \")\n      : \"\";\n\n    return {\n      json: {\n        status: parsed.status || null,\n        missing_fields: missingString,\n      },\n    };\n  } catch (error) {\n    console.error(error);\n    return {\n      json: {\n        status: null,\n        missing_fields: \"\",\n        error: error.message,\n      },\n    };\n  }\n});\n\nreturn formattedItems;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -12320,
+        592
+      ],
+      "id": "7e13d889-17c5-4b6d-8a97-9405d695fbd3",
+      "name": "Code in JavaScript4"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Code in JavaScript4').item.json.status }}",
+                    "rightValue": "new_user",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "8e106077-84a1-498e-b960-a8a1bcd9d07e"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "new_user"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "dc3efcd0-6384-498e-a14a-7d80b770f024",
+                    "leftValue": "={{ $('Code in JavaScript4').item.json.status }}",
+                    "rightValue": "existing_user",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "existing_user"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "767eab29-8872-4d55-bd83-167b23aa93db",
+                    "leftValue": "={{ $('Code in JavaScript4').item.json.status }}",
+                    "rightValue": "completed_user",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "completed_user"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -12096,
+        576
+      ],
+      "id": "e6c4fd4b-b8f6-4cf4-a3cb-1482ba2cecc0",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger1').item.json.message.chat.id }}",
+        "text": "=Hello {{ $('Telegram Trigger1').item.json.message.from.first_name }},\n\nAll required documents have been recieved.  Have a wonderful day!",
+        "additionalFields": {
+          "disable_notification": true
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -11872,
+        736
+      ],
+      "id": "42501e7f-193b-4bff-87fb-f3c2f5aff8e3",
+      "name": "Send a text message2",
+      "webhookId": "264dbcb0-9c8c-418a-92bf-279f94a5bb7a",
+      "notesInFlow": false,
+      "credentials": {
+        "telegramApi": {
+          "id": "dP8xscPNakvzLMy9",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -11648,
+        736
+      ],
+      "id": "6e016dc0-447d-4df0-a782-65db890874da",
+      "name": "No Operation, do nothing1"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU",
+          "mode": "list",
+          "cachedResultName": "Yuly360",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Telegram ID",
+              "lookupValue": "={{ $('Telegram Trigger1').item.json.message.from.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        -12464,
+        800
+      ],
+      "id": "914dbc4b-5e1d-442b-93ac-e4f4f7c901ff",
+      "name": "SheetChecker",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fR99avLtezOLRSc3",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU",
+          "mode": "list",
+          "cachedResultName": "Yuly360",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Telegram ID": "={{ $('Telegram Trigger1').item.json.message.from.id }}",
+            "Name": "={{ $('Telegram Trigger1').item.json.message.chat.first_name }}"
+          },
+          "matchingColumns": [
+            "Telegram ID"
+          ],
+          "schema": [
+            {
+              "id": "Telegram ID",
+              "displayName": "Telegram ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ID ",
+              "displayName": "ID ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Social Security number ",
+              "displayName": "Social Security number ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "W-2s from employers",
+              "displayName": "W-2s from employers",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "1099s",
+              "displayName": "1099s",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Business income/expense summary",
+              "displayName": "Business income/expense summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Bank statements ",
+              "displayName": "Bank statements ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Last year’s tax return",
+              "displayName": "Last year’s tax return",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Receipts for deductions",
+              "displayName": "Receipts for deductions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -11776,
+        448
+      ],
+      "id": "2d796505-9225-4f70-ad5a-26be94d08316",
+      "name": "Append or update row in sheet",
+      "alwaysOutputData": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fR99avLtezOLRSc3",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
+      "typeVersion": 1,
+      "position": [
+        -12736,
+        800
+      ],
+      "id": "a3af2ed8-7dda-471b-90bc-f64de6d1381f",
+      "name": "Mistral Cloud Chat Model",
+      "credentials": {
+        "mistralCloudApi": {
+          "id": "tQYx8Ug3THvq2Jk6",
+          "name": "Mistral Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5b79c7bc-6006-4c58-9975-e66aeab70418",
+              "leftValue": "={{ $('Code in JavaScript').item.json.extension }}",
+              "rightValue": ".pdf",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "34d6b002-363a-4642-91ed-70dc84c24c37",
+              "leftValue": "={{ $('Code in JavaScript').item.json.extension }}",
+              "rightValue": ".doc",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "59056b92-dac2-45f6-8e34-f2fed9e720a9",
+              "leftValue": "={{ $('Code in JavaScript').item.json.extension }}",
+              "rightValue": ".docx",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "d4d4a024-a6de-4205-bd12-de4ff9ef8a77",
+              "leftValue": "={{ $('Code in JavaScript').item.json.extension }}",
+              "rightValue": ".xlsx",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -10848,
+        576
+      ],
+      "id": "aebdc5aa-fa4e-4f82-86ce-1d25a8037f59",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.documentData[0].documentType }}",
+                    "rightValue": "W-2 Form",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "727441b0-c9e1-45bb-b501-4015cba18019"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "W-2 Form"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "cd25be72-3fa7-4a9d-a7c1-054ab5c1be87",
+                    "leftValue": "={{ $json.documentData[0].documentType }}",
+                    "rightValue": "ID (Driver's License or Passport)",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ID (Driver’s License or Passport)"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "42395fd0-58db-4304-b177-b1ee79280711",
+                    "leftValue": "={{ $json.documentData[0].documentType }}",
+                    "rightValue": "Social Security Document",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Social Security Document"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "5bbde287-6772-4f6e-adfa-da1809cacdf8",
+                    "leftValue": "={{ $json.documentData[0].documentType }}",
+                    "rightValue": "1099 Form",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "1099 Form"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "b882ca57-0c58-4b5b-9343-5b1ff0bbffbd",
+                    "leftValue": "={{ $json.documentData[0].documentType }}",
+                    "rightValue": "Bank Statement",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Bank Statement"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "034713a7-146f-4797-90c6-5d7373a9f322",
+                    "leftValue": "={{ $json.documentData[0].documentType }}",
+                    "rightValue": "Business Income/Expense Summary",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Business Income/Expense Summary"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "b997d5c4-76b6-40f7-969b-42e6d7367c27",
+                    "leftValue": "={{ $json.documentData[0].documentType }}",
+                    "rightValue": "Last Year's Tax Return",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Last Year’s Tax Return"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "0dbb558c-5421-4d84-830f-d3c9c5eefbb1",
+                    "leftValue": "={{ $json.documentData[0].documentType }}",
+                    "rightValue": "Receipt (any type)",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Receipt (any type)"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "a79181d0-405f-4857-af88-02e6b4af5648",
+                    "leftValue": "={{ $json.documentData[0].documentType }}",
+                    "rightValue": "Unknown",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Unknown"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -9056,
+        -240
+      ],
+      "id": "b3101453-5a46-40a6-8449-8d84b2bf6645",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('Telegram Trigger1').item.json.message.document.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -8384,
+        -800
+      ],
+      "id": "e595c954-ad30-457c-b9dc-e59c116f962e",
+      "name": "Get a file2",
+      "webhookId": "0b21d0b6-645c-4f16-b465-f62a162ceff0",
+      "credentials": {
+        "telegramApi": {
+          "id": "dP8xscPNakvzLMy9",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Telegram Trigger1').item.json.message.from.first_name }} {{ $('Telegram Trigger1').item.json.message.from.last_name }} -- {{ $('Switch').item.json.documentData[0].documentType }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1Lgmee48_12bNvPZ21hBY7BagF6ZQWLZq",
+          "mode": "list",
+          "cachedResultName": "W-2 Form",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1Lgmee48_12bNvPZ21hBY7BagF6ZQWLZq"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -8160,
+        -800
+      ],
+      "id": "2055cb40-5468-43fe-90bc-97842c10b0e6",
+      "name": "Upload file1",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zpJI957FPePQaGxY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "reader",
+            "type": "anyone"
+          }
+        },
+        "options": {
+          "transferOwnership": false
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -7936,
+        -800
+      ],
+      "id": "f0cbfa8e-4a43-4272-aeca-8ea0f8c01884",
+      "name": "Share file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zpJI957FPePQaGxY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU",
+          "mode": "list",
+          "cachedResultName": "Yuly360",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "W-2s from employers": "={{ $('Upload file1').item.json.webViewLink }}",
+            "Telegram ID": "={{ $('Telegram Trigger1').item.json.message.chat.id }}"
+          },
+          "matchingColumns": [
+            "Telegram ID"
+          ],
+          "schema": [
+            {
+              "id": "Telegram ID",
+              "displayName": "Telegram ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ID ",
+              "displayName": "ID ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Social Security number ",
+              "displayName": "Social Security number ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "W-2s from employers",
+              "displayName": "W-2s from employers",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "1099s",
+              "displayName": "1099s",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Business income/expense summary",
+              "displayName": "Business income/expense summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Bank statements ",
+              "displayName": "Bank statements ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Last year’s tax return",
+              "displayName": "Last year’s tax return",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Receipts for deductions",
+              "displayName": "Receipts for deductions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -7712,
+        -800
+      ],
+      "id": "f0947895-de80-4136-b079-120181057a2a",
+      "name": "Append or update row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fR99avLtezOLRSc3",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('Telegram Trigger1').item.json.message.document.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -8384,
+        -608
+      ],
+      "id": "61a5fcb5-da12-44df-864c-6a569936aa18",
+      "name": "Get a file3",
+      "webhookId": "0b21d0b6-645c-4f16-b465-f62a162ceff0",
+      "credentials": {
+        "telegramApi": {
+          "id": "dP8xscPNakvzLMy9",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Telegram Trigger1').item.json.message.from.first_name }} {{ $('Telegram Trigger1').item.json.message.from.last_name }} -- {{ $('Switch').item.json.documentData[0].documentType }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1afZ-HBFyNx5F10bbmHiyfd8V4Vq0lN_s",
+          "mode": "list",
+          "cachedResultName": "ID",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1afZ-HBFyNx5F10bbmHiyfd8V4Vq0lN_s"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -8160,
+        -608
+      ],
+      "id": "72d5e891-4a8f-4e94-bacf-d2697953e7a2",
+      "name": "Upload file2",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zpJI957FPePQaGxY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "reader",
+            "type": "anyone"
+          }
+        },
+        "options": {
+          "transferOwnership": false
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -7936,
+        -608
+      ],
+      "id": "996f369d-e8bb-41c1-b78f-42c94c0c729a",
+      "name": "Share file1",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zpJI957FPePQaGxY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU",
+          "mode": "list",
+          "cachedResultName": "Yuly360",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Telegram ID": "={{ $('Telegram Trigger1').item.json.message.chat.id }}",
+            "ID ": "={{ $('Upload file2').item.json.webViewLink }}"
+          },
+          "matchingColumns": [
+            "Telegram ID"
+          ],
+          "schema": [
+            {
+              "id": "Telegram ID",
+              "displayName": "Telegram ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ID ",
+              "displayName": "ID ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Social Security number ",
+              "displayName": "Social Security number ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "W-2s from employers",
+              "displayName": "W-2s from employers",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "1099s",
+              "displayName": "1099s",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Business income/expense summary",
+              "displayName": "Business income/expense summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Bank statements ",
+              "displayName": "Bank statements ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Last year’s tax return",
+              "displayName": "Last year’s tax return",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Receipts for deductions",
+              "displayName": "Receipts for deductions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -7712,
+        -608
+      ],
+      "id": "af4bcab1-a766-4af4-823f-375c0c73c0f3",
+      "name": "Append or update row in sheet2",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fR99avLtezOLRSc3",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('Telegram Trigger1').item.json.message.document.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -8384,
+        -416
+      ],
+      "id": "3a18833e-ffb7-4047-9dc5-f3482d3976f1",
+      "name": "Get a file4",
+      "webhookId": "0b21d0b6-645c-4f16-b465-f62a162ceff0",
+      "credentials": {
+        "telegramApi": {
+          "id": "dP8xscPNakvzLMy9",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Telegram Trigger1').item.json.message.from.first_name }} {{ $('Telegram Trigger1').item.json.message.from.last_name }} -- {{ $('Switch').item.json.documentData[0].documentType }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1HJymr7_soboG6WPbhGP5T00weWfAmgL5",
+          "mode": "list",
+          "cachedResultName": "Social Security Document",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1HJymr7_soboG6WPbhGP5T00weWfAmgL5"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -8160,
+        -416
+      ],
+      "id": "701d641f-7d1f-4293-a769-ec7c61c8f05d",
+      "name": "Upload file3",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zpJI957FPePQaGxY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "reader",
+            "type": "anyone"
+          }
+        },
+        "options": {
+          "transferOwnership": false
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -7936,
+        -416
+      ],
+      "id": "e1328b0e-8aef-4f00-ab11-4e50052fea79",
+      "name": "Share file2",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zpJI957FPePQaGxY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU",
+          "mode": "list",
+          "cachedResultName": "Yuly360",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Telegram ID": "={{ $('Telegram Trigger1').item.json.message.chat.id }}",
+            "Social Security number ": "={{ $('Upload file3').item.json.webViewLink }}"
+          },
+          "matchingColumns": [
+            "Telegram ID"
+          ],
+          "schema": [
+            {
+              "id": "Telegram ID",
+              "displayName": "Telegram ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ID ",
+              "displayName": "ID ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Social Security number ",
+              "displayName": "Social Security number ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "W-2s from employers",
+              "displayName": "W-2s from employers",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "1099s",
+              "displayName": "1099s",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Business income/expense summary",
+              "displayName": "Business income/expense summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Bank statements ",
+              "displayName": "Bank statements ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Last year’s tax return",
+              "displayName": "Last year’s tax return",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Receipts for deductions",
+              "displayName": "Receipts for deductions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -7712,
+        -416
+      ],
+      "id": "82096191-a521-42d2-a115-38469cb38605",
+      "name": "Append or update row in sheet3",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fR99avLtezOLRSc3",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('Telegram Trigger1').item.json.message.document.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -8384,
+        -224
+      ],
+      "id": "2f9ed05e-d389-4f62-8b6d-28473401fbe0",
+      "name": "Get a file5",
+      "webhookId": "0b21d0b6-645c-4f16-b465-f62a162ceff0",
+      "credentials": {
+        "telegramApi": {
+          "id": "dP8xscPNakvzLMy9",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Telegram Trigger1').item.json.message.from.first_name }} {{ $('Telegram Trigger1').item.json.message.from.last_name }} -- {{ $('Switch').item.json.documentData[0].documentType }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1TNZZhL8jlRX95r9DcfGgmk9tuXF7stOw",
+          "mode": "list",
+          "cachedResultName": "1099 Form",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1TNZZhL8jlRX95r9DcfGgmk9tuXF7stOw"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -8160,
+        -224
+      ],
+      "id": "38f88d90-1d82-4d68-b095-21cedfa4d6c1",
+      "name": "Upload file4",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zpJI957FPePQaGxY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "reader",
+            "type": "anyone"
+          }
+        },
+        "options": {
+          "transferOwnership": false
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -7936,
+        -224
+      ],
+      "id": "bfc482c2-a71d-46ed-8535-3e88c079480c",
+      "name": "Share file3",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zpJI957FPePQaGxY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU",
+          "mode": "list",
+          "cachedResultName": "Yuly360",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Telegram ID": "={{ $('Telegram Trigger1').item.json.message.chat.id }}",
+            "1099s": "={{ $('Upload file4').item.json.webViewLink }}"
+          },
+          "matchingColumns": [
+            "Telegram ID"
+          ],
+          "schema": [
+            {
+              "id": "Telegram ID",
+              "displayName": "Telegram ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ID ",
+              "displayName": "ID ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Social Security number ",
+              "displayName": "Social Security number ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "W-2s from employers",
+              "displayName": "W-2s from employers",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "1099s",
+              "displayName": "1099s",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Business income/expense summary",
+              "displayName": "Business income/expense summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Bank statements ",
+              "displayName": "Bank statements ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Last year’s tax return",
+              "displayName": "Last year’s tax return",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Receipts for deductions",
+              "displayName": "Receipts for deductions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -7712,
+        -224
+      ],
+      "id": "0c372db5-29a2-45ea-9918-aa07f990dec6",
+      "name": "Append or update row in sheet4",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fR99avLtezOLRSc3",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('Telegram Trigger1').item.json.message.document.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -8384,
+        -32
+      ],
+      "id": "ed7a9c6c-931e-448b-91c4-679c1cbac1b7",
+      "name": "Get a file6",
+      "webhookId": "0b21d0b6-645c-4f16-b465-f62a162ceff0",
+      "credentials": {
+        "telegramApi": {
+          "id": "dP8xscPNakvzLMy9",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Telegram Trigger1').item.json.message.from.first_name }} {{ $('Telegram Trigger1').item.json.message.from.last_name }} -- {{ $('Switch').item.json.documentData[0].documentType }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1FhFeiU3Ig2hQrTWmxoSQ9cY30u8Q0ILV",
+          "mode": "list",
+          "cachedResultName": "Bank Statement",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1FhFeiU3Ig2hQrTWmxoSQ9cY30u8Q0ILV"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -8160,
+        -32
+      ],
+      "id": "afead37d-4e17-4235-9fdd-94f639141f3b",
+      "name": "Upload file5",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zpJI957FPePQaGxY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "reader",
+            "type": "anyone"
+          }
+        },
+        "options": {
+          "transferOwnership": false
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -7936,
+        -32
+      ],
+      "id": "8625ac0e-7993-4428-977c-a091cdfe4da4",
+      "name": "Share file4",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zpJI957FPePQaGxY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU",
+          "mode": "list",
+          "cachedResultName": "Yuly360",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Telegram ID": "={{ $('Telegram Trigger1').item.json.message.chat.id }}",
+            "Bank statements ": "={{ $('Upload file5').item.json.webViewLink }}"
+          },
+          "matchingColumns": [
+            "Telegram ID"
+          ],
+          "schema": [
+            {
+              "id": "Telegram ID",
+              "displayName": "Telegram ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ID ",
+              "displayName": "ID ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Social Security number ",
+              "displayName": "Social Security number ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "W-2s from employers",
+              "displayName": "W-2s from employers",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "1099s",
+              "displayName": "1099s",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Business income/expense summary",
+              "displayName": "Business income/expense summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Bank statements ",
+              "displayName": "Bank statements ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Last year’s tax return",
+              "displayName": "Last year’s tax return",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Receipts for deductions",
+              "displayName": "Receipts for deductions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -7712,
+        -32
+      ],
+      "id": "bdd7188d-45a2-4a4a-9ce4-ed14fca349b3",
+      "name": "Append or update row in sheet5",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fR99avLtezOLRSc3",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('Telegram Trigger1').item.json.message.document.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -8384,
+        160
+      ],
+      "id": "14f01f06-6a68-4fb9-ba02-570aa5446fca",
+      "name": "Get a file7",
+      "webhookId": "0b21d0b6-645c-4f16-b465-f62a162ceff0",
+      "credentials": {
+        "telegramApi": {
+          "id": "dP8xscPNakvzLMy9",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Telegram Trigger1').item.json.message.from.first_name }} {{ $('Telegram Trigger1').item.json.message.from.last_name }} -- {{ $('Switch').item.json.documentData[0].documentType }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1dbdEbDVZi-hdYwzFZIhdQ9IB3saIXHQi",
+          "mode": "list",
+          "cachedResultName": "Business Income/Expense Summary",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1dbdEbDVZi-hdYwzFZIhdQ9IB3saIXHQi"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -8160,
+        160
+      ],
+      "id": "cf88a042-1f6e-4773-867c-9f1dd3e982bd",
+      "name": "Upload file6",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zpJI957FPePQaGxY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "reader",
+            "type": "anyone"
+          }
+        },
+        "options": {
+          "transferOwnership": false
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -7936,
+        160
+      ],
+      "id": "93294e71-8aeb-4e43-a479-29c009ecdd68",
+      "name": "Share file5",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zpJI957FPePQaGxY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU",
+          "mode": "list",
+          "cachedResultName": "Yuly360",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Telegram ID": "={{ $('Telegram Trigger1').item.json.message.chat.id }}",
+            "Business income/expense summary": "={{ $('Upload file6').item.json.webViewLink }}"
+          },
+          "matchingColumns": [
+            "Telegram ID"
+          ],
+          "schema": [
+            {
+              "id": "Telegram ID",
+              "displayName": "Telegram ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ID ",
+              "displayName": "ID ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Social Security number ",
+              "displayName": "Social Security number ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "W-2s from employers",
+              "displayName": "W-2s from employers",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "1099s",
+              "displayName": "1099s",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Business income/expense summary",
+              "displayName": "Business income/expense summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Bank statements ",
+              "displayName": "Bank statements ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Last year’s tax return",
+              "displayName": "Last year’s tax return",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Receipts for deductions",
+              "displayName": "Receipts for deductions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -7712,
+        160
+      ],
+      "id": "200bb114-ddca-4cbb-a87b-e2dd023586c3",
+      "name": "Append or update row in sheet6",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fR99avLtezOLRSc3",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('Telegram Trigger1').item.json.message.document.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -8384,
+        352
+      ],
+      "id": "280e9f09-a4e2-4901-8715-8a585a422900",
+      "name": "Get a file8",
+      "webhookId": "0b21d0b6-645c-4f16-b465-f62a162ceff0",
+      "credentials": {
+        "telegramApi": {
+          "id": "dP8xscPNakvzLMy9",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Telegram Trigger1').item.json.message.from.first_name }} {{ $('Telegram Trigger1').item.json.message.from.last_name }} -- {{ $('Switch').item.json.documentData[0].documentType }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1_d-7oCnjcn8XWElUkRQFYIpasSz4Anx7",
+          "mode": "list",
+          "cachedResultName": "Last Year’s Tax Return",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1_d-7oCnjcn8XWElUkRQFYIpasSz4Anx7"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -8160,
+        352
+      ],
+      "id": "3cb2e082-5059-4c5a-9aaf-70ef816c5a73",
+      "name": "Upload file7",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zpJI957FPePQaGxY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "reader",
+            "type": "anyone"
+          }
+        },
+        "options": {
+          "transferOwnership": false
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -7936,
+        352
+      ],
+      "id": "dab67da4-d503-48a5-9836-9e3d4d199c44",
+      "name": "Share file6",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zpJI957FPePQaGxY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU",
+          "mode": "list",
+          "cachedResultName": "Yuly360",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Telegram ID": "={{ $('Telegram Trigger1').item.json.message.chat.id }}",
+            "Last year’s tax return": "={{ $('Upload file7').item.json.webViewLink }}"
+          },
+          "matchingColumns": [
+            "Telegram ID"
+          ],
+          "schema": [
+            {
+              "id": "Telegram ID",
+              "displayName": "Telegram ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ID ",
+              "displayName": "ID ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Social Security number ",
+              "displayName": "Social Security number ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "W-2s from employers",
+              "displayName": "W-2s from employers",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "1099s",
+              "displayName": "1099s",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Business income/expense summary",
+              "displayName": "Business income/expense summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Bank statements ",
+              "displayName": "Bank statements ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Last year’s tax return",
+              "displayName": "Last year’s tax return",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Receipts for deductions",
+              "displayName": "Receipts for deductions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -7712,
+        352
+      ],
+      "id": "9c9790c3-0821-455e-95bb-4b11847395fe",
+      "name": "Append or update row in sheet7",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fR99avLtezOLRSc3",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('Telegram Trigger1').item.json.message.document.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -8368,
+        544
+      ],
+      "id": "d569e3d5-fa09-4d80-8065-e93dbe3f5fb9",
+      "name": "Get a file9",
+      "webhookId": "0b21d0b6-645c-4f16-b465-f62a162ceff0",
+      "credentials": {
+        "telegramApi": {
+          "id": "dP8xscPNakvzLMy9",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Telegram Trigger1').item.json.message.from.first_name }} {{ $('Telegram Trigger1').item.json.message.from.last_name }} -- {{ $('Switch').item.json.documentData[0].documentType }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1vcAkPckqzTj_Vm4V7yDMAKZoeFovASBS",
+          "mode": "list",
+          "cachedResultName": "Receipt (any type)",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1vcAkPckqzTj_Vm4V7yDMAKZoeFovASBS"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -8144,
+        544
+      ],
+      "id": "d97f746e-dbc9-4eba-acc7-bcbb594ab76c",
+      "name": "Upload file8",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zpJI957FPePQaGxY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "reader",
+            "type": "anyone"
+          }
+        },
+        "options": {
+          "transferOwnership": false
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -7920,
+        544
+      ],
+      "id": "02f7b0dd-19d6-4b94-8feb-af2a95121131",
+      "name": "Share file7",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zpJI957FPePQaGxY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU",
+          "mode": "list",
+          "cachedResultName": "Yuly360",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Telegram ID": "={{ $('Telegram Trigger1').item.json.message.chat.id }}",
+            "Receipts for deductions": "={{ $('Upload file8').item.json.webViewLink }}"
+          },
+          "matchingColumns": [
+            "Telegram ID"
+          ],
+          "schema": [
+            {
+              "id": "Telegram ID",
+              "displayName": "Telegram ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ID ",
+              "displayName": "ID ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Social Security number ",
+              "displayName": "Social Security number ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "W-2s from employers",
+              "displayName": "W-2s from employers",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "1099s",
+              "displayName": "1099s",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Business income/expense summary",
+              "displayName": "Business income/expense summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Bank statements ",
+              "displayName": "Bank statements ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Last year’s tax return",
+              "displayName": "Last year’s tax return",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Receipts for deductions",
+              "displayName": "Receipts for deductions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -7696,
+        544
+      ],
+      "id": "edcd07f5-22e5-46ce-80e4-77f5f40b3fbd",
+      "name": "Append or update row in sheet8",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fR99avLtezOLRSc3",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -8976,
+        496
+      ],
+      "id": "42e79fe4-dde7-4125-8984-950827c4c37c",
+      "name": "No Operation, do nothing2"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Code in JavaScript1').item.json.documentData[0].documentType }}",
+                    "rightValue": "W-2 Form",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "727441b0-c9e1-45bb-b501-4015cba18019"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "W-2 Form"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "cd25be72-3fa7-4a9d-a7c1-054ab5c1be87",
+                    "leftValue": "={{ $('Code in JavaScript1').item.json.documentData[0].documentType }}",
+                    "rightValue": "ID (Driver's License or Passport)",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ID (Driver's License or Passport)"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "42395fd0-58db-4304-b177-b1ee79280711",
+                    "leftValue": "={{ $('Code in JavaScript1').item.json.documentData[0].documentType }}",
+                    "rightValue": "Social Security Document",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Social Security Document"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "5bbde287-6772-4f6e-adfa-da1809cacdf8",
+                    "leftValue": "={{ $('Code in JavaScript1').item.json.documentData[0].documentType }}",
+                    "rightValue": "1099 Form",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "1099 Form"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "b882ca57-0c58-4b5b-9343-5b1ff0bbffbd",
+                    "leftValue": "={{ $('Code in JavaScript1').item.json.documentData[0].documentType }}",
+                    "rightValue": "Bank Statement",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Bank Statement"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "034713a7-146f-4797-90c6-5d7373a9f322",
+                    "leftValue": "={{ $('Code in JavaScript1').item.json.documentData[0].documentType }}",
+                    "rightValue": "Business Income/Expense Summary",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Business Income/Expense Summary"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "b997d5c4-76b6-40f7-969b-42e6d7367c27",
+                    "leftValue": "={{ $('Code in JavaScript1').item.json.documentData[0].documentType }}",
+                    "rightValue": "Last Year's Tax Return",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Last Year's Tax Return"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "0dbb558c-5421-4d84-830f-d3c9c5eefbb1",
+                    "leftValue": "={{ $('Code in JavaScript1').item.json.documentData[0].documentType }}",
+                    "rightValue": "Receipt (any type)",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Receipt (any type)"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "a79181d0-405f-4857-af88-02e6b4af5648",
+                    "leftValue": "={{ $('Code in JavaScript1').item.json.documentData[0].documentType }}",
+                    "rightValue": "Unknown",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Unknown"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -9152,
+        1472
+      ],
+      "id": "df7da28d-6762-4011-9b7a-b4830fe637bb",
+      "name": "Switch2"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('Telegram Trigger1').item.json.message.photo[0].file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -8384,
+        928
+      ],
+      "id": "7b470300-e4a5-49de-8807-67d9c856ff91",
+      "name": "Get a file10",
+      "webhookId": "0b21d0b6-645c-4f16-b465-f62a162ceff0",
+      "credentials": {
+        "telegramApi": {
+          "id": "dP8xscPNakvzLMy9",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Telegram Trigger1').item.json.message.from.first_name }} {{ $('Telegram Trigger1').item.json.message.from.last_name }} -- {{ $('Switch2').item.json.documentData[0].documentType }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1Lgmee48_12bNvPZ21hBY7BagF6ZQWLZq",
+          "mode": "list",
+          "cachedResultName": "W-2 Form",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1Lgmee48_12bNvPZ21hBY7BagF6ZQWLZq"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -8160,
+        928
+      ],
+      "id": "784300e1-e71d-4e2f-89b8-aabe3bb39cfd",
+      "name": "Upload file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zpJI957FPePQaGxY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "reader",
+            "type": "anyone"
+          }
+        },
+        "options": {
+          "transferOwnership": false
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -7936,
+        928
+      ],
+      "id": "8a2ecfa4-4273-4957-9286-1023787250bc",
+      "name": "Share file8",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zpJI957FPePQaGxY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU",
+          "mode": "list",
+          "cachedResultName": "Yuly360",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "W-2s from employers": "={{ $('Upload file').item.json.webViewLink }}",
+            "Telegram ID": "={{ $('Telegram Trigger1').item.json.message.chat.id }}"
+          },
+          "matchingColumns": [
+            "Telegram ID"
+          ],
+          "schema": [
+            {
+              "id": "Telegram ID",
+              "displayName": "Telegram ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ID ",
+              "displayName": "ID ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Social Security number ",
+              "displayName": "Social Security number ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "W-2s from employers",
+              "displayName": "W-2s from employers",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "1099s",
+              "displayName": "1099s",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Business income/expense summary",
+              "displayName": "Business income/expense summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Bank statements ",
+              "displayName": "Bank statements ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Last year’s tax return",
+              "displayName": "Last year’s tax return",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Receipts for deductions",
+              "displayName": "Receipts for deductions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -7712,
+        928
+      ],
+      "id": "0d0c699a-2aba-440c-96e4-9437fe58962b",
+      "name": "Append or update row in sheet9",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fR99avLtezOLRSc3",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('Telegram Trigger1').item.json.message.photo[0].file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -8384,
+        1120
+      ],
+      "id": "32e4bf64-d57f-4eb4-9071-555d24eb36f0",
+      "name": "Get a file11",
+      "webhookId": "0b21d0b6-645c-4f16-b465-f62a162ceff0",
+      "credentials": {
+        "telegramApi": {
+          "id": "dP8xscPNakvzLMy9",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Telegram Trigger1').item.json.message.from.first_name }} {{ $('Telegram Trigger1').item.json.message.from.last_name }} -- {{ $('Switch2').item.json.documentData[0].documentType }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1afZ-HBFyNx5F10bbmHiyfd8V4Vq0lN_s",
+          "mode": "list",
+          "cachedResultName": "ID",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1afZ-HBFyNx5F10bbmHiyfd8V4Vq0lN_s"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -8160,
+        1120
+      ],
+      "id": "60ac0297-c235-4738-b34b-dbd85213b67a",
+      "name": "Upload file9",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zpJI957FPePQaGxY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "reader",
+            "type": "anyone"
+          }
+        },
+        "options": {
+          "transferOwnership": false
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -7936,
+        1120
+      ],
+      "id": "62c8f029-265f-46bc-ae50-f70da7708f68",
+      "name": "Share file9",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zpJI957FPePQaGxY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU",
+          "mode": "list",
+          "cachedResultName": "Yuly360",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Telegram ID": "={{ $('Telegram Trigger1').item.json.message.chat.id }}",
+            "ID ": "={{ $('Upload file9').item.json.webViewLink }}"
+          },
+          "matchingColumns": [
+            "Telegram ID"
+          ],
+          "schema": [
+            {
+              "id": "Telegram ID",
+              "displayName": "Telegram ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ID ",
+              "displayName": "ID ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Social Security number ",
+              "displayName": "Social Security number ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "W-2s from employers",
+              "displayName": "W-2s from employers",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "1099s",
+              "displayName": "1099s",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Business income/expense summary",
+              "displayName": "Business income/expense summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Bank statements ",
+              "displayName": "Bank statements ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Last year’s tax return",
+              "displayName": "Last year’s tax return",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Receipts for deductions",
+              "displayName": "Receipts for deductions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -7712,
+        1120
+      ],
+      "id": "9ec21418-a508-4417-b8f1-53f2bfb77597",
+      "name": "Append or update row in sheet10",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fR99avLtezOLRSc3",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('Telegram Trigger1').item.json.message.photo[0].file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -8384,
+        1312
+      ],
+      "id": "44c64aec-c2be-4a14-a5e5-ea8fb97911aa",
+      "name": "Get a file12",
+      "webhookId": "0b21d0b6-645c-4f16-b465-f62a162ceff0",
+      "credentials": {
+        "telegramApi": {
+          "id": "dP8xscPNakvzLMy9",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Telegram Trigger1').item.json.message.from.first_name }} {{ $('Telegram Trigger1').item.json.message.from.last_name }} -- {{ $('Switch2').item.json.documentData[0].documentType }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1HJymr7_soboG6WPbhGP5T00weWfAmgL5",
+          "mode": "list",
+          "cachedResultName": "Social Security Document",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1HJymr7_soboG6WPbhGP5T00weWfAmgL5"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -8160,
+        1312
+      ],
+      "id": "dd96c8ed-877e-4ab9-b0ad-8040c4bb8047",
+      "name": "Upload file10",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zpJI957FPePQaGxY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "reader",
+            "type": "anyone",
+            "allowFileDiscovery": true
+          }
+        },
+        "options": {
+          "transferOwnership": false
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -7936,
+        1312
+      ],
+      "id": "428e1841-d4b6-4db6-ada7-009da72bdf50",
+      "name": "Share file10",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zpJI957FPePQaGxY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU",
+          "mode": "list",
+          "cachedResultName": "Yuly360",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Telegram ID": "={{ $('Telegram Trigger1').item.json.message.chat.id }}",
+            "Social Security number ": "={{ $('Upload file10').item.json.webViewLink }}"
+          },
+          "matchingColumns": [
+            "Telegram ID"
+          ],
+          "schema": [
+            {
+              "id": "Telegram ID",
+              "displayName": "Telegram ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ID ",
+              "displayName": "ID ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Social Security number ",
+              "displayName": "Social Security number ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "W-2s from employers",
+              "displayName": "W-2s from employers",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "1099s",
+              "displayName": "1099s",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Business income/expense summary",
+              "displayName": "Business income/expense summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Bank statements ",
+              "displayName": "Bank statements ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Last year’s tax return",
+              "displayName": "Last year’s tax return",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Receipts for deductions",
+              "displayName": "Receipts for deductions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -7712,
+        1312
+      ],
+      "id": "4b077af7-edbb-4336-913e-88f9319d2c28",
+      "name": "Append or update row in sheet11",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fR99avLtezOLRSc3",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('Telegram Trigger1').item.json.message.photo[0].file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -8384,
+        1504
+      ],
+      "id": "b87f5f77-3c5a-47bf-a688-601fc6cb31b2",
+      "name": "Get a file13",
+      "webhookId": "0b21d0b6-645c-4f16-b465-f62a162ceff0",
+      "credentials": {
+        "telegramApi": {
+          "id": "dP8xscPNakvzLMy9",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Telegram Trigger1').item.json.message.from.first_name }} {{ $('Telegram Trigger1').item.json.message.from.last_name }} -- {{ $('Switch2').item.json.documentData[0].documentType }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1TNZZhL8jlRX95r9DcfGgmk9tuXF7stOw",
+          "mode": "list",
+          "cachedResultName": "1099 Form",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1TNZZhL8jlRX95r9DcfGgmk9tuXF7stOw"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -8160,
+        1504
+      ],
+      "id": "6c295510-7bc8-4f0d-bab1-a69082faf6ff",
+      "name": "Upload file11",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zpJI957FPePQaGxY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "reader",
+            "type": "anyone"
+          }
+        },
+        "options": {
+          "transferOwnership": false
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -7936,
+        1504
+      ],
+      "id": "ef9fee3d-133f-4c6a-8026-7c2998b38e71",
+      "name": "Share file11",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zpJI957FPePQaGxY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU",
+          "mode": "list",
+          "cachedResultName": "Yuly360",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Telegram ID": "={{ $('Telegram Trigger1').item.json.message.chat.id }}",
+            "1099s": "={{ $('Upload file11').item.json.webViewLink }}"
+          },
+          "matchingColumns": [
+            "Telegram ID"
+          ],
+          "schema": [
+            {
+              "id": "Telegram ID",
+              "displayName": "Telegram ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ID ",
+              "displayName": "ID ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Social Security number ",
+              "displayName": "Social Security number ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "W-2s from employers",
+              "displayName": "W-2s from employers",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "1099s",
+              "displayName": "1099s",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Business income/expense summary",
+              "displayName": "Business income/expense summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Bank statements ",
+              "displayName": "Bank statements ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Last year’s tax return",
+              "displayName": "Last year’s tax return",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Receipts for deductions",
+              "displayName": "Receipts for deductions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -7712,
+        1504
+      ],
+      "id": "623ad74b-d30b-44e3-8eda-cbc9396247c4",
+      "name": "Append or update row in sheet12",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fR99avLtezOLRSc3",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('Telegram Trigger1').item.json.message.photo[0].file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -8384,
+        1696
+      ],
+      "id": "b6815c7a-51a4-4af0-abd9-94f28780d948",
+      "name": "Get a file14",
+      "webhookId": "0b21d0b6-645c-4f16-b465-f62a162ceff0",
+      "credentials": {
+        "telegramApi": {
+          "id": "dP8xscPNakvzLMy9",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Telegram Trigger1').item.json.message.from.first_name }} {{ $('Telegram Trigger1').item.json.message.from.last_name }} -- {{ $('Switch2').item.json.documentData[0].documentType }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1FhFeiU3Ig2hQrTWmxoSQ9cY30u8Q0ILV",
+          "mode": "list",
+          "cachedResultName": "Bank Statement",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1FhFeiU3Ig2hQrTWmxoSQ9cY30u8Q0ILV"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -8160,
+        1696
+      ],
+      "id": "8f98c22d-6d6f-442b-ba7a-95ee9433ee23",
+      "name": "Upload file12",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zpJI957FPePQaGxY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "reader",
+            "type": "anyone"
+          }
+        },
+        "options": {
+          "transferOwnership": false
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -7936,
+        1696
+      ],
+      "id": "c48aa497-19c6-4a9d-93e7-265fb9383d18",
+      "name": "Share file12",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zpJI957FPePQaGxY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU",
+          "mode": "list",
+          "cachedResultName": "Yuly360",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Telegram ID": "={{ $('Telegram Trigger1').item.json.message.chat.id }}",
+            "Bank statements ": "={{ $('Upload file12').item.json.webViewLink }}"
+          },
+          "matchingColumns": [
+            "Telegram ID"
+          ],
+          "schema": [
+            {
+              "id": "Telegram ID",
+              "displayName": "Telegram ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ID ",
+              "displayName": "ID ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Social Security number ",
+              "displayName": "Social Security number ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "W-2s from employers",
+              "displayName": "W-2s from employers",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "1099s",
+              "displayName": "1099s",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Business income/expense summary",
+              "displayName": "Business income/expense summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Bank statements ",
+              "displayName": "Bank statements ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Last year’s tax return",
+              "displayName": "Last year’s tax return",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Receipts for deductions",
+              "displayName": "Receipts for deductions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -7712,
+        1696
+      ],
+      "id": "d15701bf-bb21-485f-88b4-e2a94d54559d",
+      "name": "Append or update row in sheet13",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fR99avLtezOLRSc3",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('Telegram Trigger1').item.json.message.photo[0].file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -8384,
+        1888
+      ],
+      "id": "9d6a83c9-b7a1-4af8-afb1-56917107e545",
+      "name": "Get a file15",
+      "webhookId": "0b21d0b6-645c-4f16-b465-f62a162ceff0",
+      "credentials": {
+        "telegramApi": {
+          "id": "dP8xscPNakvzLMy9",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Telegram Trigger1').item.json.message.from.first_name }} {{ $('Telegram Trigger1').item.json.message.from.last_name }} -- {{ $('Switch2').item.json.documentData[0].documentType }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1dbdEbDVZi-hdYwzFZIhdQ9IB3saIXHQi",
+          "mode": "list",
+          "cachedResultName": "Business Income/Expense Summary",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1dbdEbDVZi-hdYwzFZIhdQ9IB3saIXHQi"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -8160,
+        1888
+      ],
+      "id": "87ea6c76-4294-428e-89e4-d0591c51aa62",
+      "name": "Upload file13",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zpJI957FPePQaGxY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "reader",
+            "type": "anyone"
+          }
+        },
+        "options": {
+          "transferOwnership": false
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -7936,
+        1888
+      ],
+      "id": "83e1d9eb-533e-497f-860d-a3a5d43e34fe",
+      "name": "Share file13",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zpJI957FPePQaGxY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU",
+          "mode": "list",
+          "cachedResultName": "Yuly360",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Telegram ID": "={{ $('Telegram Trigger1').item.json.message.chat.id }}",
+            "Business income/expense summary": "={{ $('Upload file13').item.json.webViewLink }}"
+          },
+          "matchingColumns": [
+            "Telegram ID"
+          ],
+          "schema": [
+            {
+              "id": "Telegram ID",
+              "displayName": "Telegram ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ID ",
+              "displayName": "ID ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Social Security number ",
+              "displayName": "Social Security number ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "W-2s from employers",
+              "displayName": "W-2s from employers",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "1099s",
+              "displayName": "1099s",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Business income/expense summary",
+              "displayName": "Business income/expense summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Bank statements ",
+              "displayName": "Bank statements ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Last year’s tax return",
+              "displayName": "Last year’s tax return",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Receipts for deductions",
+              "displayName": "Receipts for deductions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -7712,
+        1888
+      ],
+      "id": "4d360cda-dd5f-4a98-ace9-8129a60f0b72",
+      "name": "Append or update row in sheet14",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fR99avLtezOLRSc3",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('Telegram Trigger1').item.json.message.photo[0].file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -8384,
+        2080
+      ],
+      "id": "efe3539e-d84f-4c24-8e98-d8afe14945b2",
+      "name": "Get a file16",
+      "webhookId": "0b21d0b6-645c-4f16-b465-f62a162ceff0",
+      "credentials": {
+        "telegramApi": {
+          "id": "dP8xscPNakvzLMy9",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Telegram Trigger1').item.json.message.from.first_name }} {{ $('Telegram Trigger1').item.json.message.from.last_name }} -- {{ $('Switch2').item.json.documentData[0].documentType }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1_d-7oCnjcn8XWElUkRQFYIpasSz4Anx7",
+          "mode": "list",
+          "cachedResultName": "Last Year’s Tax Return",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1_d-7oCnjcn8XWElUkRQFYIpasSz4Anx7"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -8160,
+        2080
+      ],
+      "id": "204b32fb-d73d-4875-a7b9-963dc3a81e70",
+      "name": "Upload file14",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zpJI957FPePQaGxY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "reader",
+            "type": "anyone"
+          }
+        },
+        "options": {
+          "transferOwnership": false
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -7936,
+        2080
+      ],
+      "id": "698aad7f-350d-4891-8c43-30fa65e3f42c",
+      "name": "Share file14",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zpJI957FPePQaGxY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU",
+          "mode": "list",
+          "cachedResultName": "Yuly360",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Telegram ID": "={{ $('Telegram Trigger1').item.json.message.chat.id }}",
+            "Last year’s tax return": "={{ $('Upload file14').item.json.webViewLink }}"
+          },
+          "matchingColumns": [
+            "Telegram ID"
+          ],
+          "schema": [
+            {
+              "id": "Telegram ID",
+              "displayName": "Telegram ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ID ",
+              "displayName": "ID ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Social Security number ",
+              "displayName": "Social Security number ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "W-2s from employers",
+              "displayName": "W-2s from employers",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "1099s",
+              "displayName": "1099s",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Business income/expense summary",
+              "displayName": "Business income/expense summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Bank statements ",
+              "displayName": "Bank statements ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Last year’s tax return",
+              "displayName": "Last year’s tax return",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Receipts for deductions",
+              "displayName": "Receipts for deductions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -7712,
+        2080
+      ],
+      "id": "42b37df3-834e-4526-a466-909d4112bd48",
+      "name": "Append or update row in sheet15",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fR99avLtezOLRSc3",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('Telegram Trigger1').item.json.message.photo[0].file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -8384,
+        2272
+      ],
+      "id": "7a6eeba2-ef95-4439-8424-cfee6262f93d",
+      "name": "Get a file17",
+      "webhookId": "0b21d0b6-645c-4f16-b465-f62a162ceff0",
+      "credentials": {
+        "telegramApi": {
+          "id": "dP8xscPNakvzLMy9",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Telegram Trigger1').item.json.message.from.first_name }} {{ $('Telegram Trigger1').item.json.message.from.last_name }} -- {{ $('Switch2').item.json.documentData[0].documentType }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1vcAkPckqzTj_Vm4V7yDMAKZoeFovASBS",
+          "mode": "list",
+          "cachedResultName": "Receipt (any type)",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1vcAkPckqzTj_Vm4V7yDMAKZoeFovASBS"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -8160,
+        2272
+      ],
+      "id": "d36592a7-45a2-4ab4-b89d-4240131b4108",
+      "name": "Upload file15",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zpJI957FPePQaGxY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "reader",
+            "type": "anyone"
+          }
+        },
+        "options": {
+          "transferOwnership": false
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -7936,
+        2272
+      ],
+      "id": "d5f703ac-5acc-4668-beea-c988a07b0a2d",
+      "name": "Share file15",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zpJI957FPePQaGxY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU",
+          "mode": "list",
+          "cachedResultName": "Yuly360",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Telegram ID": "={{ $('Telegram Trigger1').item.json.message.chat.id }}",
+            "Receipts for deductions": "={{ $('Upload file15').item.json.webViewLink }}"
+          },
+          "matchingColumns": [
+            "Telegram ID"
+          ],
+          "schema": [
+            {
+              "id": "Telegram ID",
+              "displayName": "Telegram ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ID ",
+              "displayName": "ID ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Social Security number ",
+              "displayName": "Social Security number ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "W-2s from employers",
+              "displayName": "W-2s from employers",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "1099s",
+              "displayName": "1099s",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Business income/expense summary",
+              "displayName": "Business income/expense summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Bank statements ",
+              "displayName": "Bank statements ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Last year’s tax return",
+              "displayName": "Last year’s tax return",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Receipts for deductions",
+              "displayName": "Receipts for deductions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -7712,
+        2272
+      ],
+      "id": "26b02201-197d-4b58-8a65-691b0b5cd645",
+      "name": "Append or update row in sheet16",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fR99avLtezOLRSc3",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -9296,
+        2016
+      ],
+      "id": "e0786c4d-9d06-490a-bd2d-06af26b8e1f1",
+      "name": "No Operation, do nothing3"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -6336,
+        1120
+      ],
+      "id": "99890da8-b747-4817-9e30-127985fffb4c",
+      "name": "No Operation, do nothing4"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -12912,
+        -288
+      ],
+      "id": "aa9daefc-618a-47e1-9ffa-74d8dde5c3a1",
+      "name": "Schedule Trigger1"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1exJPSYO_ekpHPLx6TmkGPy_7g69AIwZMYnBoTIZ-WIU"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "gid=0"
+        },
+        "options": {}
+      },
+      "id": "243d8e50-1aed-4bec-897a-68da7d99fa82",
+      "name": "Read all sheet rows1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -12656,
+        -288
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fR99avLtezOLRSc3",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Helper function to check if a value is empty\nconst isEmpty = (value) => {\n  return value === null || \n         value === undefined || \n         (typeof value === 'string' && value.trim() === '') ||\n         (typeof value === 'number' && isNaN(value));\n};\n\nconst results = [];\n\nfor (const inputItem of $input.all()) {\n  const item = inputItem.json;\n  \n  // Find Telegram ID column (case-insensitive)\n  const telegramIdKey = Object.keys(item).find(\n    key => key.toLowerCase() === 'telegram id'\n  ) || 'Telegram ID';\n\n  // Skip rows without Telegram ID\n  if (!item[telegramIdKey] || isEmpty(item[telegramIdKey])) {\n    continue;\n  }\n\n  // Get all column names except Telegram ID and row_number\n  const allColumns = Object.keys(item);\n  const missingColumns = [];\n\n  for (const column of allColumns) {\n    const columnLower = column.toLowerCase();\n\n    // Skip Telegram ID and row_number columns\n    if (columnLower !== 'telegram id' && column !== 'row_number') {\n      const value = item[column];\n      if (isEmpty(value)) {\n        missingColumns.push(column);\n      }\n    }\n  }\n\n  // Only push if there are missing columns\n  if (missingColumns.length > 0) {\n    results.push({\n      json: {\n        row_number: item.row_number,\n        telegram_id: item[telegramIdKey],\n        name: item.Name,\n        missing_columns: missingColumns.join(\", \"), // ✅ single string\n        total_missing: missingColumns.length\n      }\n    });\n  }\n}\n\nreturn results;\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -12448,
+        -288
+      ],
+      "id": "2088b69b-39c2-462b-9880-ad6e4276bc53",
+      "name": "Code in JavaScript6"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -12240,
+        -288
+      ],
+      "id": "395b777b-afd5-4fa2-b90e-fbe1c3309105",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "name": "Replace Me",
+      "typeVersion": 1,
+      "position": [
+        -12032,
+        -80
+      ],
+      "id": "4b9784b0-f715-480c-badc-b3abd21cb975"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.telegram_id }}",
+        "text": "=You still have these {{ $json.total_missing }} document(s) to upload:\n\n{{ $json.missing_columns }}\n\nPlease do ensure to complete this process.\n\nThis is an automated message. If you recieved this in error, please ignore. ",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -11712,
+        -304
+      ],
+      "id": "ff719191-03d9-4917-95f3-0fbc0435fcd2",
+      "name": "Send a text message3",
+      "webhookId": "341c553f-bd5e-4c89-bc1e-e3eb649926aa",
+      "credentials": {
+        "telegramApi": {
+          "id": "dP8xscPNakvzLMy9",
+          "name": "Telegram account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -11248,
+        -64
+      ],
+      "id": "29d3e8ca-77cf-47c9-a5a8-a590a9be2b89",
+      "name": "No Operation, do nothing5"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger1').item.json.message.chat.id }}",
+        "text": "=Please do re-upload the {{ $('Telegram Trigger1').item.json.message.document.file_name }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -9312,
+        144
+      ],
+      "id": "f19121f8-2ed2-4594-9b15-ce0eb3459d68",
+      "name": "Send a text message4",
+      "webhookId": "b4dc9676-11cd-4bca-b33d-778137d1243d",
+      "credentials": {
+        "telegramApi": {
+          "id": "dP8xscPNakvzLMy9",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger1').item.json.message.chat.id }}",
+        "text": "=Opps! {{ $('Telegram Trigger1').item.json.message.document.file_name }} was uploaded as a document. Please Upload a photo",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -9776,
+        1776
+      ],
+      "id": "2d1b4dcf-ac2e-4316-bfd4-1698fc12e806",
+      "name": "Send a text message1",
+      "webhookId": "746f02aa-0e62-4ea4-a329-1e71d6b3d464",
+      "credentials": {
+        "telegramApi": {
+          "id": "dP8xscPNakvzLMy9",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file": {
+      "main": [
+        [
+          {
+            "node": "Analyze document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze document": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file1": {
+      "main": [
+        [
+          {
+            "node": "Analyze image",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze image": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Switch2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger1": {
+      "main": [
+        [
+          {
+            "node": "RAG Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAG Agent1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript4": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message2": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SheetChecker": {
+      "ai_tool": [
+        [
+          {
+            "node": "RAG Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mistral Cloud Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "RAG Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Get a file",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get a file1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Get a file2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get a file3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get a file4",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get a file5",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get a file6",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get a file7",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get a file8",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get a file9",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file2": {
+      "main": [
+        [
+          {
+            "node": "Upload file1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file1": {
+      "main": [
+        [
+          {
+            "node": "Share file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Share file": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file3": {
+      "main": [
+        [
+          {
+            "node": "Upload file2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file2": {
+      "main": [
+        [
+          {
+            "node": "Share file1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Share file1": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file4": {
+      "main": [
+        [
+          {
+            "node": "Upload file3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file3": {
+      "main": [
+        [
+          {
+            "node": "Share file2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Share file2": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file5": {
+      "main": [
+        [
+          {
+            "node": "Upload file4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file4": {
+      "main": [
+        [
+          {
+            "node": "Share file3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Share file3": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file6": {
+      "main": [
+        [
+          {
+            "node": "Upload file5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file5": {
+      "main": [
+        [
+          {
+            "node": "Share file4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Share file4": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file7": {
+      "main": [
+        [
+          {
+            "node": "Upload file6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file6": {
+      "main": [
+        [
+          {
+            "node": "Share file5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Share file5": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file8": {
+      "main": [
+        [
+          {
+            "node": "Upload file7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file7": {
+      "main": [
+        [
+          {
+            "node": "Share file6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Share file6": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file9": {
+      "main": [
+        [
+          {
+            "node": "Upload file8",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file8": {
+      "main": [
+        [
+          {
+            "node": "Share file7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Share file7": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet8",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet1": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet2": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet3": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet4": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet5": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet6": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet7": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet8": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch2": {
+      "main": [
+        [
+          {
+            "node": "Get a file10",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get a file11",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get a file12",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get a file13",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get a file14",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get a file15",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get a file16",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get a file17",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file10": {
+      "main": [
+        [
+          {
+            "node": "Upload file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file": {
+      "main": [
+        [
+          {
+            "node": "Share file8",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Share file8": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet9",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file11": {
+      "main": [
+        [
+          {
+            "node": "Upload file9",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file9": {
+      "main": [
+        [
+          {
+            "node": "Share file9",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Share file9": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet10",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file12": {
+      "main": [
+        [
+          {
+            "node": "Upload file10",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file10": {
+      "main": [
+        [
+          {
+            "node": "Share file10",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Share file10": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet11",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file13": {
+      "main": [
+        [
+          {
+            "node": "Upload file11",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file11": {
+      "main": [
+        [
+          {
+            "node": "Share file11",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Share file11": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet12",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file14": {
+      "main": [
+        [
+          {
+            "node": "Upload file12",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file12": {
+      "main": [
+        [
+          {
+            "node": "Share file12",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Share file12": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet13",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file15": {
+      "main": [
+        [
+          {
+            "node": "Upload file13",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file13": {
+      "main": [
+        [
+          {
+            "node": "Share file13",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Share file13": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet14",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file16": {
+      "main": [
+        [
+          {
+            "node": "Upload file14",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file14": {
+      "main": [
+        [
+          {
+            "node": "Share file14",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Share file14": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet15",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file17": {
+      "main": [
+        [
+          {
+            "node": "Upload file15",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file15": {
+      "main": [
+        [
+          {
+            "node": "Share file15",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Share file15": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet16",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet9": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet10": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet11": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet12": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet13": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet14": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet15": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet16": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Read all sheet rows1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read all sheet rows1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript6": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Send a text message3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Replace Me",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Replace Me": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message3": {
+      "main": [
+        [],
+        [
+          {
+            "node": "No Operation, do nothing5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message4": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message1": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "72c3b9f7-f91a-4a34-aa7d-9e8458264b3a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "37582d8b9670e531e2e765bd5869d50e6779fe3d520bf9702ab17103340f2db8"
+  },
+  "id": "u4YyG9UiKI5xBHzF",
+  "tags": []
+}
