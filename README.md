@@ -229,9 +229,10 @@ Send a document to your Telegram bot and verify:
   "driveLink": "https://drive.google.com/...",
   "source": "telegram"
 }
-
+```
 ---
-⚠️ Common Issues & Fixes
+
+## ⚠️ Common Issues & Fixes
 | Issue              | Cause                | Solution            |
 | ------------------ | -------------------- | ------------------- |
 | File not processed | Bot permission issue | Reconnect Telegram  |
@@ -239,3 +240,44 @@ Send a document to your Telegram bot and verify:
 | Sheet not updated  | Wrong Sheet ID       | Verify credentials  |
 | Duplicate entries  | Missing validation   | Enable record check |
 | Workflow stops     | Empty input          | Use fallback logic  |
+
+---
+
+## 🔐 Security Best Practices
+
+- Use n8n credential manager
+- Never hardcode tokens
+- Limit Google Drive permissions
+- Rotate API keys regularly
+- Restrict Telegram bot access
+
+---
+
+## 🚀 Future Enhancements
+
+- OCR for scanned PDFs
+- AI-based document tagging
+- Slack / Email notifications
+- Document versioning
+- Search & filtering dashboard
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome!
+
+Ideas:
+
+- Add vector search
+- Improve AI prompts
+- Add document categorization
+- Enhance logging & alerts
+
+## 📎 Resources
+
+- n8n Documentation
+- Telegram Bot API
+- Google Drive API
+- Google Sheets API
+- OpenAI / Anthropic API
